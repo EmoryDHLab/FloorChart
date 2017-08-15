@@ -36,4 +36,4 @@ Code for I2C communication between 3 Arduinos for membrane switch control of LED
 
 !WARNING!
 
-This system uses a customized version of the Keypad library. Install the version provided here.
+This system uses a customized version of the Keypad library. Install the version provided in this folder.
