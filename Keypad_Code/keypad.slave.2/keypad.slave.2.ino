@@ -11,8 +11,8 @@ unsigned char nodePayload[PAYLOAD_SIZE]; // store data to send to master
 #include <Keypad.h>
 
 // ROWS cannot exceed 30 and COLS cannot exceed 16; otherwise, edit Keypad.h and .cpp
-const unsigned char ROWS = 30;
-const unsigned char COLS = 15;
+const uint8_t ROWS = 30;
+const uint8_t COLS = 15;
 
 
 

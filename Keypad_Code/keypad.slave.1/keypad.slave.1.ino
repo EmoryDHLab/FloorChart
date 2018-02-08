@@ -13,9 +13,10 @@ unsigned char nodePayload[PAYLOAD_SIZE]; // store data to send to master
 #include <Keypad.h>
 
 // ROWS cannot exceed 30 and COLS cannot exceed 16; otherwise, edit Keypad.h and .cpp
-const unsigned char ROWS = 30;
-const unsigned char COLS = 15;
 
+const uint8_t COLS = 15;
+const uint8_t ROWS = 30;
+int ROWS2 = 35;
 
 
 // BOTTOM-INPUT
@@ -28,8 +29,12 @@ unsigned char colPins[COLS] = {16, 15, 14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1
 Keypad keypad = Keypad(rowPins, colPins, ROWS, COLS);
 
 
+
 void setup(){
+  
   Serial.begin(9600); //Sets the speed of the serial port - I am not sure this is needed if we have the following line
+  Serial.print(ROWS);
+  Serial.print(COLS);
   Wire.begin(NODE_ADDRESS); // join i2c bus with NODE_ADDRESS
   Wire.onRequest(requestEvent); // function to call when master reads data (on master request)
 }

@@ -32,12 +32,11 @@
 #include <Keypad.h>
 
 // <<constructor>> Allows custom keymap, pin configuration, and keypad sizes.
-Keypad::Keypad(unsigned char *row, unsigned char *col, unsigned char numRows, unsigned char numCols) {
-	rowPins = row;
+Keypad::Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t numCols) {
+    rowPins = row;
 	columnPins = col;
 	sizeKpd.rows = numRows;
 	sizeKpd.columns = numCols;
-
 	setDebounceTime(10);
 
 	startTime = 0;
@@ -55,6 +54,7 @@ unsigned long int Keypad::getButtonChange() {
 
 // Populate the key list.
 bool Keypad::getKeys() {
+    //Serial.println("Get KEYS");
 	bool keyActivity = false;
 
 	// Limit how often the keypad is scanned. This makes the loop() run 10 times as fast.
@@ -71,11 +71,11 @@ bool Keypad::getKeys() {
 
 // Private : Hardware scan
 void Keypad::scanKeys() {
+    //Serial.println("Scan Keys");
 	// Re-intialize the row pins. Allows sharing these pins with other hardware.
 	for (unsigned char r=0; r<sizeKpd.rows; r++) {
 		pin_mode(rowPins[r],INPUT_PULLUP);
 	}
-
 	// bitMap stores ALL the keys that are being pressed.
 	for (unsigned char c=0; c<sizeKpd.columns; c++) {
 		pin_mode(columnPins[c],OUTPUT);
@@ -94,23 +94,30 @@ void Keypad::scanKeys() {
 
 // Manage the list without rearranging the keys. Returns true if any keys on the list changed state.
 bool Keypad::updateList() {
-
+    //Serial.println("Update List");
 	bool anyActivity = false;
-
 	// Add the button changes to the button change buffer
 	for (unsigned char r=0; r<sizeKpd.rows; r++) {
 		for (unsigned char c=0; c<sizeKpd.columns; c++) {
             bool button = bitMap[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c];
             unsigned short index = (unsigned short)(((unsigned short)r * (unsigned short)sizeKpd.columns) + c);
-            
             if (button && !keys[index]) {
+                Serial.print("Button pressed (row: ");
+                Serial.print(r+1);
+                Serial.print(" col: ");
+                Serial.print(c+1);
+                Serial.println(")");
                 anyActivity = true;
                 keys[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = button;
-                
                 unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | button;
                 buttonChangeBuffer.push(buttonChange);
                 
             } else if (!button && keys[index]) {
+                Serial.print("Button released (row: ");
+                Serial.print(r+1);
+                Serial.print(" col: ");
+                Serial.print(c+1);
+                Serial.println(")");
                 anyActivity = true;
                 keys[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = button;
                 

@@ -62,11 +62,11 @@ typedef unsigned long ulong;
 // Made changes according to this post http://arduino.cc/forum/index.php?topic=58337.0
 // by Nick Gammon. Thanks for the input Nick. It actually saved 78 bytes for me. :)
 typedef struct {
-    unsigned char rows;
-    unsigned char columns;
+    uint8_t rows;
+    uint8_t columns;
 } KeypadSize;
 
-#define LIST_MAX 65536	// Max number of keys on the active list
+#define LIST_MAX 900	// Max number of keys on the active list
 
 
 //class Keypad : public Key, public HAL_obj {
@@ -75,7 +75,7 @@ public:
     QueueArray<unsigned long int> buttonChangeBuffer; //short should support 65536 buttons or up to a 256 x 256 matrix as well as 65536 send states
     
     
-	Keypad(unsigned char *row, unsigned char *col, unsigned char numRows, unsigned char numCols);
+	Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t numCols);
 
 	virtual void pin_mode(byte pinNum, byte mode) { pinMode(pinNum, mode); }
 	virtual void pin_write(byte pinNum, boolean level) { digitalWrite(pinNum, level); }

@@ -121,7 +121,8 @@ void loop()
   
   for (unsigned char nodeAddress = START_NODE; nodeAddress <= NODE_MAX; nodeAddress++) { // we are starting from Node address 1
     Wire.requestFrom(nodeAddress, PAYLOAD_SIZE);    // request data from node#
-    // Serial.println(nodeAddress);
+    Serial.println(nodeAddress);
+    Serial.print(Wire.available());
     if(Wire.available() == PAYLOAD_SIZE) {  // if data size is avaliable from nodes
       Serial.println("Payload received.");
       //for (int i = 0; i < PAYLOAD_SIZE; i++) nodePayload[i] = Wire.read();  // get nodes data
