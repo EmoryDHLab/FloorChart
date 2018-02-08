@@ -35,58 +35,44 @@
 #define PIN_29 A1
 #define PIN_30 A0
 
+#define NUMSTRIPS 30
+
+#include <Adafruit_NeoPixel.h>
+
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
+// Parameter 3 = pixel type flags, add together as needssed:
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 
+
+// Creating a pixel type that can hold the
+typedef struct {
+    Adafruit_NeoPixel neopixelStrip;
+    unsigned char state;
+} strip;
+
 /*
  *Create an array  with 30 strips, using previously defined pins. 
  */
- 
-Adafruit_NeoPixel strips[]{
-  
-  Adafruit_NeoPixel(30, PIN_1, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_2, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_3, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_4, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_5, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_6, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_7, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_8, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_9, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_10, NEO_GRB + NEO_KHZ800),
-  
-  Adafruit_NeoPixel(30, PIN_11, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_12, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_13, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_14, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_15, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_16, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_17, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_18, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_19, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_20, NEO_GRB + NEO_KHZ800),
-  
-  Adafruit_NeoPixel(30, PIN_21, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_22, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_23, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_24, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_25, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_26, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_27, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_28, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_29, NEO_GRB + NEO_KHZ800),
-  Adafruit_NeoPixel(30, PIN_30, NEO_GRB + NEO_KHZ800),
+
+
+
+class LED {
+public:
+    LED();
+    strip strips[NUMSTRIPS];
+    int pinArray[NUMSTRIPS] = {40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 0xA15, 0xA14, 0xA13, 0xA12, 0xA11, 0xA10, 0xA9, 0xA8, 0xA7, 0xA6, 0xA5, 0xA4, 0xA3, 0xA2, 0xA1};
+    //Predefine Standard colors
+    uint32_t blank = strips[0].neopixelStrip.Color(0, 0, 0);
+    uint32_t blue = strips[0].neopixelStrip.Color(0, 0, 255);  //101
+    uint32_t red = strips[0].neopixelStrip.Color(255, 0, 0);  //102
+    uint32_t green = strips[0].neopixelStrip.Color(0, 255, 0);  //103
+    
+private:
 };
 
-//Predefine Standard colors
-uint32_t blank = strips[0].Color(0, 0, 0);
-uint32_t blue = strips[0].Color(0, 0, 255);  //101
-uint32_t red = strips[0].Color(255, 0, 0);  //102
-uint32_t green = strips[0].Color(0, 255, 0);  //103
 
-uint32_t currentColor = blue;
+
