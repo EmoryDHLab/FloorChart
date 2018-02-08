@@ -33,7 +33,7 @@
 #ifndef KEYPAD_H
 #define KEYPAD_H
 
-#include "Key.h"
+#include <QueueArray.h>
 
 // bperrybap - Thanks for a well reasoned argument and the following macro(s).
 // See http://arduino.cc/forum/index.php/topic,142041.msg1069480.html#msg1069480
@@ -62,65 +62,42 @@ typedef unsigned long ulong;
 // Made changes according to this post http://arduino.cc/forum/index.php?topic=58337.0
 // by Nick Gammon. Thanks for the input Nick. It actually saved 78 bytes for me. :)
 typedef struct {
-    byte rows;
-    byte columns;
+    unsigned char rows;
+    unsigned char columns;
 } KeypadSize;
 
-#define LIST_MAX 480	// Max number of keys on the active list
-#define MAPSIZE 30		// MAPSIZE is the number of rows (times 16 columns)
-
-//  grab mem address for x- why can't I find this used in any other file?
-// if key map uses int instead of char, must update pointer to int* pointer
-#define makeKeymap(x) ((char*)x)
+#define LIST_MAX 65536	// Max number of keys on the active list
 
 
 //class Keypad : public Key, public HAL_obj {
-class Keypad : public Key {
+class Keypad {
 public:
-
-	Keypad(char *userKeymap, byte *row, byte *col, byte numRows, byte numCols);
+    QueueArray<unsigned long int> buttonChangeBuffer; //short should support 65536 buttons or up to a 256 x 256 matrix as well as 65536 send states
+    
+    
+	Keypad(unsigned char *row, unsigned char *col, unsigned char numRows, unsigned char numCols);
 
 	virtual void pin_mode(byte pinNum, byte mode) { pinMode(pinNum, mode); }
 	virtual void pin_write(byte pinNum, boolean level) { digitalWrite(pinNum, level); }
 	virtual int  pin_read(byte pinNum) { return digitalRead(pinNum); }
 
-	// AV note: uint defined by typedef, here defined as unsigned int / the default (C++ things) 
-	uint bitMap[MAPSIZE];	// size(MAPSIZE) row x 16 column array of bits. Except Due which has 32 columns.
-	Key key[LIST_MAX];
-	unsigned long holdTimer;
+	// AV note: uint defined by typedef, here defined as unsigned int / the default (C++ things)
+    bool bitMap[LIST_MAX];
+    bool keys[LIST_MAX];
 
-	char getKey();
-	int getKeyCode();
-	int getKeyRow();
-	int getKeyCol();
-	bool getKeys();
-	KeyState getState();
-	void begin(char *userKeymap);
-	bool isPressed(char keyChar);
-	void setDebounceTime(uint);
-	void setHoldTime(uint);
-	void addEventListener(void (*listener)(char));
-	int findInList(char keyChar);
-	int findInList(int keyCode);
-	char waitForKey();
-	bool keyStateChanged();
-	uint numKeys();
+    unsigned long int getButtonChange();
+    bool getKeys();
+    void setDebounceTime(uint);
 
 private:
-	unsigned long startTime;
-	char *keymap;
-    byte *rowPins;
-    byte *columnPins;
+    unsigned long startTime;
+    void scanKeys();
+    bool updateList();
+
+    unsigned char *rowPins;
+    unsigned char *columnPins;
 	KeypadSize sizeKpd;
 	uint debounceTime;
-	uint holdTime;
-	bool single_key;
-
-	void scanKeys();
-	bool updateList();
-	void nextKeyState(int n, boolean button);
-	void transitionTo(int n, KeyState nextState);
-	void (*keypadEventListener)(char);
 };
 
 #endif
