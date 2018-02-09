@@ -27,7 +27,7 @@
 #define PAYLOAD_SIZE 4 // how many bytes to expect from each I2C salve node
 #define NODE_MAX 2 // maximum number of slave nodes (I2C addresses) to probe
 #define START_NODE 1 // The starting I2C address of slave nodes
-#define NODE_READ_DELAY 1000 // Some delay between I2C node reads
+#define NODE_READ_DELAY 100 // Some delay between I2C node reads
 
 // The size of the copper grid
 #define ROWSIZE 30
@@ -121,32 +121,33 @@ void loop()
   
   for (unsigned char nodeAddress = START_NODE; nodeAddress <= NODE_MAX; nodeAddress++) { // we are starting from Node address 1
     Wire.requestFrom(nodeAddress, PAYLOAD_SIZE);    // request data from node#
-    Serial.println(nodeAddress);
-    Serial.print(Wire.available());
+    
     if(Wire.available() == PAYLOAD_SIZE) {  // if data size is avaliable from nodes
-      Serial.println("Payload received.");
       //for (int i = 0; i < PAYLOAD_SIZE; i++) nodePayload[i] = Wire.read();  // get nodes data
       unsigned char addr = Wire.read();
       unsigned char row = Wire.read();
       unsigned char col = Wire.read();
       unsigned char type = Wire.read();
-      //int nodeAddress = nodePayload[0];
-      //int keyCode = nodePayload[1]; // NOTE: Key code range is 0-450, multiply for 451 - 900
-      Serial.print("Received data from node ");
-      Serial.println(addr);
-      Serial.print("Row: ");
-      Serial.println(row);
-      Serial.print("Col: ");
-      Serial.println(col);
-      Serial.print("Type: ");
-      Serial.println(type);
-      //ledRow = nodePayload[1]/15 + nodePayload[1]%15;
-      //ledCol = nodePayload[1]/30 + nodePayload[1]%30;
-      //if (nodeAddress == 2){
-      //  ledCol += 15; // we split control over 2 Arduinos, so if it comes from #2 we need to shift the column
-      //}
-      //stripControl(ledRow, ledCol, blue);
-      Serial.println("*************************");      
+      if (!(row == 0 && col == 0 && type ==0)) {
+        //int nodeAddress = nodePayload[0];
+        //int keyCode = nodePayload[1]; // NOTE: Key code range is 0-450, multiply for 451 - 900
+        Serial.println("Payload received.");
+        Serial.print("Received data from node ");
+        Serial.println(addr);
+        Serial.print("Row: ");
+        Serial.println(row);
+        Serial.print("Col: ");
+        Serial.println(col);
+        Serial.print("Type: ");
+        Serial.println(type);
+        //ledRow = nodePayload[1]/15 + nodePayload[1]%15;
+        //ledCol = nodePayload[1]/30 + nodePayload[1]%30;
+        //if (nodeAddress == 2){
+        //  ledCol += 15; // we split control over 2 Arduinos, so if it comes from #2 we need to shift the column
+        //}
+        //stripControl(ledRow, ledCol, blue);
+        Serial.println("*************************");
+      }      
       }
     }
     delay(NODE_READ_DELAY);
