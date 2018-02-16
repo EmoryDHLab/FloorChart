@@ -31,7 +31,7 @@
 */
 #include <Keypad.h>
 
-// <<constructor>> Allows custom keymap, pin configuration, and keypad sizes.
+// <<constructor>> Allows pin configuration, and keypad sizes.
 Keypad::Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t numCols) {
     rowPins = row;
 	columnPins = col;
