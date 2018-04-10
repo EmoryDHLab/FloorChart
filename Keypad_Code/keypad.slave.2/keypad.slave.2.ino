@@ -77,7 +77,7 @@ void requestEvent(){
   Serial.println(nodePayload[3]);
   if (nodePayload[3] == 1) {
     Serial.println("Pressed");
-  } else if (nodePayload[3] == 2 {
+  } else if (nodePayload[3] == 2) {
     Serial.println("Released");
   }
 }
