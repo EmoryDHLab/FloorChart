@@ -2,8 +2,8 @@
 ||
 || @file Keypad.cpp
 || @version 3.1
-|| @author Mark Stanley, Alexander Brevig
-|| @contact mstanley@technologist.com, alexanderbrevig@gmail.com
+|| @author Noah Sutter - based on keypad library: https://playground.arduino.cc/Code/Keypad
+|| @contact noahsutterwork@gmail.com
 ||
 || @description
 || | This library provides a simple interface for using matrix
@@ -12,21 +12,7 @@
 || | It also supports user selectable pins and definable keymaps.
 || #
 ||
-|| @license
-|| | This library is free software; you can redistribute it and/or
-|| | modify it under the terms of the GNU Lesser General Public
-|| | License as published by the Free Software Foundation; version
-|| | 2.1 of the License.
-|| |
-|| | This library is distributed in the hope that it will be useful,
-|| | but WITHOUT ANY WARRANTY; without even the implied warranty of
-|| | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-|| | Lesser General Public License for more details.
-|| |
-|| | You should have received a copy of the GNU Lesser General Public
-|| | License along with this library; if not, write to the Free Software
-|| | Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-|| #
+|| For use on floor chart project
 ||
 */
 #include <Keypad.h>
@@ -43,7 +29,8 @@ Keypad::Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t 
 }
 
 
-
+// Returns a button change from the front of the queue
+// Returns 0 if no button changed
 unsigned long int Keypad::getButtonChange() {
     if (!buttonChangeBuffer.isEmpty()) {
         return buttonChangeBuffer.pop();
@@ -53,8 +40,9 @@ unsigned long int Keypad::getButtonChange() {
 }
 
 // Populate the key list.
+// Scans keys and updates the activity based on that
+// Returns whether there was any activity and if the buttons changed
 bool Keypad::getKeys() {
-    //Serial.println("Get KEYS");
 	bool keyActivity = false;
 
 	// Limit how often the keypad is scanned. This makes the loop() run 10 times as fast.
@@ -70,8 +58,8 @@ bool Keypad::getKeys() {
 
 
 // Private : Hardware scan
+// Gets the current state of the buttons by checking for impdeance
 void Keypad::scanKeys() {
-    //Serial.println("Scan Keys");
 	// Re-intialize the row pins. Allows sharing these pins with other hardware.
 	for (unsigned char r=0; r<sizeKpd.rows; r++) {
 		pin_mode(rowPins[r],INPUT_PULLUP);
@@ -81,8 +69,7 @@ void Keypad::scanKeys() {
 		pin_mode(columnPins[c],OUTPUT);
 		pin_write(columnPins[c], LOW);	// Begin column pulse output.
 		for (unsigned char r=0; r<sizeKpd.rows; r++) {
-            bitMap[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = !pin_read(rowPins[r]);
-			//bitWrite(bitMap[r], c, !pin_read(rowPins[r]));  // keypress is active low so invert to high.
+            bitMap[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = !pin_read(rowPins[r]); // keypress is active low so invert to high.
 		}
 		// Set pin to high impedance input. Effectively ends column pulse.
 		pin_write(columnPins[c],HIGH);
@@ -92,15 +79,21 @@ void Keypad::scanKeys() {
 
 
 
-// Manage the list without rearranging the keys. Returns true if any keys on the list changed state.
+// Update the state of the keys based on the bitmap form the last hardware scan.
+// Returns true if any keys on the list changed state.
 bool Keypad::updateList() {
-    //Serial.println("Update List");
 	bool anyActivity = false;
 	// Add the button changes to the button change buffer
+    // loop runs through each potential button to check if there is a change
 	for (unsigned char r=0; r<sizeKpd.rows; r++) {
 		for (unsigned char c=0; c<sizeKpd.columns; c++) {
-            bool button = bitMap[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c];
+            // index is the current index of the button we are checking
             unsigned short index = (unsigned short)(((unsigned short)r * (unsigned short)sizeKpd.columns) + c);
+            // button is current state of the button we are checking
+            bool button = bitMap[index];
+            
+            // if button is pressed (is now reading low) and was not pressed in the past
+            // button was pressed
             if (button && !keys[index]) {
                 Serial.print("Button pressed (row: ");
                 Serial.print(r+1);
@@ -108,10 +101,15 @@ bool Keypad::updateList() {
                 Serial.print(c+1);
                 Serial.println(")");
                 anyActivity = true;
+                // Updating state of buttons
                 keys[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = button;
-                unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | button;
+                // Adding the changed keys to the buffer
+                // adds one to button because 0 is no key - see getButtonChange()
+                unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | (button+1);
                 buttonChangeBuffer.push(buttonChange);
                 
+            // if button is not pressed (is reading high) and was not pressed in the past
+            // button was released
             } else if (!button && keys[index]) {
                 Serial.print("Button released (row: ");
                 Serial.print(r+1);
@@ -119,9 +117,11 @@ bool Keypad::updateList() {
                 Serial.print(c+1);
                 Serial.println(")");
                 anyActivity = true;
+                // Updating the state of buttons
                 keys[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = button;
-                
-                unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | button;
+                // Adding the changed keys to the buffer
+                // adds one to button because 0 is no key - see getButtonChange()
+                unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | (button+1);
                 buttonChangeBuffer.push(buttonChange);
             }
 		}
@@ -133,33 +133,3 @@ bool Keypad::updateList() {
 void Keypad::setDebounceTime(uint debounce) {
 	debounce<1 ? debounceTime=1 : debounceTime=debounce;
 }
-
-
-
-/*
-|| @changelog
-|| | 3.1 2013-01-15 - Mark Stanley     : Fixed missing RELEASED & IDLE status when using a single key.
-|| | 3.0 2012-07-12 - Mark Stanley     : Made library multi-keypress by default. (Backwards compatible)
-|| | 3.0 2012-07-12 - Mark Stanley     : Modified pin functions to support Keypad_I2C
-|| | 3.0 2012-07-12 - Stanley & Young  : Removed static variables. Fix for multiple keypad objects.
-|| | 3.0 2012-07-12 - Mark Stanley     : Fixed bug that caused shorted pins when pressing multiple keys.
-|| | 2.0 2011-12-29 - Mark Stanley     : Added waitForKey().
-|| | 2.0 2011-12-23 - Mark Stanley     : Added the public function keyStateChanged().
-|| | 2.0 2011-12-23 - Mark Stanley     : Added the private function scanKeys().
-|| | 2.0 2011-12-23 - Mark Stanley     : Moved the Finite State Machine into the function getKeyState().
-|| | 2.0 2011-12-23 - Mark Stanley     : Removed the member variable lastUdate. Not needed after rewrite.
-|| | 1.8 2011-11-21 - Mark Stanley     : Added decision logic to compile WProgram.h or Arduino.h
-|| | 1.8 2009-07-08 - Alexander Brevig : No longer uses arrays
-|| | 1.7 2009-06-18 - Alexander Brevig : Every time a state changes the keypadEventListener will trigger, if set.
-|| | 1.7 2009-06-18 - Alexander Brevig : Added setDebounceTime. setHoldTime specifies the amount of
-|| |                                          microseconds before a HOLD state triggers
-|| | 1.7 2009-06-18 - Alexander Brevig : Added transitionTo
-|| | 1.6 2009-06-15 - Alexander Brevig : Added getState() and state variable
-|| | 1.5 2009-05-19 - Alexander Brevig : Added setHoldTime()
-|| | 1.4 2009-05-15 - Alexander Brevig : Added addEventListener
-|| | 1.3 2009-05-12 - Alexander Brevig : Added lastUdate, in order to do simple debouncing
-|| | 1.2 2009-05-09 - Alexander Brevig : Changed getKey()
-|| | 1.1 2009-04-28 - Alexander Brevig : Modified API, and made variables private
-|| | 1.0 2007-XX-XX - Mark Stanley : Initial Release
-|| #
-*/
