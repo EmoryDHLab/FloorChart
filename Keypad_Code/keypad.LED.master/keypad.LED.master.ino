@@ -30,8 +30,24 @@
 #define NODE_READ_DELAY 100 // Some delay between I2C node reads
 
 // The size of the copper grid
-#define ROWSIZE 30
-#define COLSIZE 30
+#define ROWSIZE 30 // also refers to the number of strips
+#define COLSIZE 30 // also refers to the number of pixels in each strip
+
+#define NUMSTATES 7 // sets the number of states, used to loop through the number of states
+
+// Led strips pin assignments
+unsigned char stripsToPins[NUMSTRIPS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, // 1-15
+                      30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44}; // 16-30
+
+uint32_t startTime;
+
+// holds the state of each pixel and the last time it was changed
+// the most significant 24 bits are the time (supports continuous software running for 194 days)
+// the least significant 8 bits are the state
+uint32_t pixelStates[ROWSIZE*COLSIZE];
+
+// holds the neopixel strips
+Adafruit_NeoPixel strips[ROWSIZE];
 
 
 /*
@@ -43,94 +59,51 @@
 // on a live circuit...if you must, connect GND first.
 
 void setup() {
-  /*
-  * LED: Begin BLUEFRUIT RX/TX (communication)
-  */
-  //BLUEFRUIT.begin(9600); 
-
-  /*
-   * WIRE: Set up communication to keypad.slave Arduino
-   */
   Wire.begin(); // join i2c bus 
   
-  /*
-  * Arduino: begin Serial communication 
-  */
   Serial.begin(9600);
-
-   /*
-   * LED: Setup all the strips.
-   */
-   
-   /* LEDCODE
+  // Not sure if this in necessary
   while(!Serial); // Waits for Serial to begin
-  for(int i = 0; i < sizeof(strips) / sizeof(*strips); i++)
-  {
+
+  // Initializing the strips
+  for(int i = 0; i < ROWSIZE; i++) {
+    // Parameter 1 = number of pixels in strip
+    // Parameter 2 = pin number (most are valid)
+    // Parameter 3 = pixel type flags, add together as needed:
+    //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+    //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+    //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+    //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+    Adafruit_NeoPixel strip = Adafruit_NeoPixel(COLSIZE, stripsToPins[i], NEO_GRB + NEO_KHZ800);
+    strips[i] = strip;
     strips[i].begin();
     strips[i].setBrightness(60); // Brightness goes from 0 (off) to 255(max brightness).
-    strips[i].show();
-  }*/
+    strips[i].show(); // Initializes all pixels to off
+
+    // Initialize the pixel states to state 0
+    for (int j = 0; j < COLSIZE; j++) {
+      pixelStates[i*COLSIZE + j] = 0;
+    }
+  }
+
+  startTime = millis();
 }
 
 
 void loop() 
 {
-  /*
-   * LED: Set up currentColor 
-   */
-   /* LEDCODE
-//  bool colorPicked = false;
-//  while(BLUEFRUIT.available() > 0) // Clear any unnecessary data sent to BLUEFRUIT.
-//  {
-//    BLUEFRUIT.read();
-//  }
-//  Serial.println("Please select a color on your device.");
-//  while (!colorPicked)
-//  {
-//    if (BLUEFRUIT.available() > 0)
-//    {
-//      byte recv = BLUEFRUIT.read();
-//      if (recv  == '!')
-//      {
-//        buffer_location = 0;
-//      }
-//      buffer[buffer_location] = recv;
-//      buffer_location++;
-//      if (buffer_location > sizeof(buffer) - 1)
-//      {
-//        if (buffer[1] == 'C')
-//        {
-//          Serial.println("Parsing color selection.");
-//          parseColor();
-//          colorPicked = true;
-//        }
-//      }
-//    }
-//  }
-  */
-  
-  /*
-   * WIRE: loop through slave 1 and 2 for key transmissions
-   *        pass input to stripControl to turn on corresponding LED
-   */
-
-   /* LEDCODE
-  int ledRow = 999;
-  int ledCol = 999;
-  */
-  
+  // goes through each of the slaves asking for button events
   for (unsigned char nodeAddress = START_NODE; nodeAddress <= NODE_MAX; nodeAddress++) { // we are starting from Node address 1
-    Wire.requestFrom(nodeAddress, PAYLOAD_SIZE);    // request data from node#
+    Wire.requestFrom(nodeAddress, PAYLOAD_SIZE);    // request data from node
     
-    if(Wire.available() == PAYLOAD_SIZE) {  // if data size is avaliable from nodes
-      //for (int i = 0; i < PAYLOAD_SIZE; i++) nodePayload[i] = Wire.read();  // get nodes data
+    if (Wire.available() == PAYLOAD_SIZE) {  // if data is avaliable from node
+      // read in the data
       unsigned char addr = Wire.read();
       unsigned char row = Wire.read();
       unsigned char col = Wire.read();
       unsigned char type = Wire.read();
-      if (!(row == 0 && col == 0 && type ==0)) {
-        //int nodeAddress = nodePayload[0];
-        //int keyCode = nodePayload[1]; // NOTE: Key code range is 0-450, multiply for 451 - 900
+
+      if (!(row == 0 && col == 0 && type ==0)) { // if there is actual data
         Serial.println("Payload received.");
         Serial.print("Received data from node ");
         Serial.println(addr);
@@ -140,113 +113,76 @@ void loop()
         Serial.println(col);
         Serial.print("Type: ");
         Serial.println(type);
-        //ledRow = nodePayload[1]/15 + nodePayload[1]%15;
-        //ledCol = nodePayload[1]/30 + nodePayload[1]%30;
-        //if (nodeAddress == 2){
-        //  ledCol += 15; // we split control over 2 Arduinos, so if it comes from #2 we need to shift the column
-        //}
-        //stripControl(ledRow, ledCol, blue);
         Serial.println("*************************");
-      }      
+        updatePixel(addr, row, col, type);
+        
       }
     }
-    delay(NODE_READ_DELAY);
+  }
+  // waits a reasonable amount
+  delay(NODE_READ_DELAY);
 }
 
+// Returns the state of a pixel given the row and the column of the pixel
+uint8_t getPixelState(uint8_t row, uint8_t col) {
+  return pixelStates[(uint32_t)row * COLSIZE + (uint32_t)col] & 0xF;
+}
 
-/*
- * LED: Turn on LED at input row, column, color
- * If user inputs 100 for both row and column, all LEDs turn on 
- */
- /* LEDCODE
-void stripControl(int row, int column, int color)
-{
-  /*
-   * If the user types in two 100s then turn on all the pixels then turn them all off in 5 seconds.
-   */
-    /* LEDCODE
-  if(row == 99 && column == 99)
-  {
-    for(int i = 0; i < sizeof(strips) / sizeof(*strips); i++)
-    {
-      for(int j = 0; j < 30;j++) //------------30 pixels per strip
-      {                      
-        strips[i].setPixelColor(j, currentColor);
+// Sets the state fo a pixel given the row, column, and new state
+void setPixelState(uint8_t row, uint8_t col, uint8_t state) {
+  uint32_t index = ((uint32_t)row * COLSIZE + (uint32_t)col);
+  pixelStates[index] = (pixelStates[index] & 0xFFF0) & state;
+}
+
+// Returns the time of a pixel given the row and the column of the pixel
+uint32_t getPixelTime(uint8_t row, uint8_t col) {
+  return (uint32_t)pixelStates[(uint32_t)row * COLSIZE + (uint32_t)col]>>8 & 0xFFF;
+}
+
+// Sets the time fo a pixel given the row, column, and new time
+void setPixelTime(uint8_t row, uint8_t col, uint32_t t) {
+  uint32_t index = ((uint32_t)row * COLSIZE + (uint32_t)col);
+  pixelStates[index] = (pixelStates[index] & 0x000F) & (t<<8);
+}
+
+// Sets the color of a pixel 
+void setPixelColor(uint8_t row, uint8_t col, uint8_t red, uint8_t green, uint8_t blue) {
+  strips[row].setPixelColor(col, red, green, blue); //sets the pixel color
+  strips[row].show(); //updates the color
+}
+
+// Updates the pixel, including state, color, and time pressed based on the info received from slave arduinos
+void updatePixel(uint8_t addr, uint8_t row, uint8_t col, uint8_t type) {
+  // updating the col since the slaves only have half of the pixels each
+  col += ((addr - 1) * (COLSIZE / 2));
+  if (type == 1) { // pressed
+    if (getPixelTime(row, col) - startTime > 200) { // checks that it has been at least 200 milliseconds since the key was last released (combats loose connections)
+
+      // updates the color of the pixel based on the state
+      uint8_t state = getPixelState(row, col);
+      if (state == 0) {
+        setPixelColor(row, col, 100, 100, 100);
+      } else if (state == 1) {
+        setPixelColor(row, col, 100, 0, 0);
+      } else if (state == 2) {
+        setPixelColor(row, col, 0, 100, 0);
+      } else if (state == 3) {
+        setPixelColor(row, col, 0, 0, 100);
+      } else if (state == 4) {
+        setPixelColor(row, col, 100, 100, 0);
+      } else if (state == 5) {
+        setPixelColor(row, col, 100, 0, 100);
+      } else if (state == 6) {
+        setPixelColor(row, col, 0, 100, 100);
       }
-      strips[i].show();
+      
+      //updates the state
+      setPixelState(row, col, (state + 1) % NUMSTATES);
     }
-    delay(5000);
-    for(int i = 0; i < sizeof(strips) / sizeof(*strips); i++)
-    {
-      for(int j = 0; j < 30; j++) //------------30 pixels per strip
-      {                      
-        strips[i].setPixelColor(j, 0, 0, 0);
-      }
-      strips[i].show();
-    }
-  /*
-   *If the picked pixel in off, turn it on. If the pixel is on, then turn it off.
-   */
-    /* LEDCODE
-  }
-  else
-  {
-    if(strips[row].getPixelColor(column) == blank)
-    {
-      strips[row].setPixelColor(column, currentColor);
-      strips[row].show();
-    }
-    else
-    {
-      strips[row].setPixelColor(column, currentColor);
-      //strips[row].setPixelColor(column, 0, 0, 0);
-      strips[row].show();
-    } 
+  } else if (type == 2) { // released
+    // update the time state of the pixel
+    setPixelTime(row, col, millis() - startTime);
   }
 }
-*/
-
-/**
- * LED: Parses color input from BlueFruit, i.e. from Serial
- */
- /* LEDCODE
-void parseColor()
-{
-  Serial.write("Color Selected: \n");
-  uint8_t red_value;
-  uint8_t green_value;
-  uint8_t blue_value;
-  red_value = buffer[2];
-  green_value = buffer[3];
-  blue_value = buffer[4];
-  Serial.print("Red Value: ");
-  Serial.print(red_value, DEC);
-  Serial.print('\n');
-  Serial.print("Green Value: ");
-  Serial.print(green_value, DEC);
-  Serial.print('\n');
-  Serial.print("Blue Value: ");
-  Serial.print(blue_value, DEC);
-  Serial.print('\n');
-  currentColor = strips[0].Color(red_value, green_value, blue_value);
-}
-*?
-
-
-/*
- * WIRE: function activated by key press
- */
- /*
-void receiveEvent(int i) {
-  while (Wire.available()) {
-    int key = Wire.read();
-    Serial.println(key);
-    int row = key/15 + key%15;
-    int col = key/30 + key%30;
-    Serial.println(row);
-    Serial.println(col);
-  }
-}
-*/
 
 
