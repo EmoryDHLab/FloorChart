@@ -53,13 +53,14 @@ typedef struct {
     uint8_t columns;
 } KeypadSize;
 
+// Setting this too large will cause memory issues (it will overwrite other active memory)
 #define LIST_MAX 900	// Max number of keys on the active list
 
 
 //class Keypad : public Key, public HAL_obj {
 class Keypad {
 public:
-    QueueArray<unsigned long int> buttonChangeBuffer; //short should support 65536 buttons or up to a 256 x 256 matrix as well as 65536 send states
+    QueueArray<unsigned long int> buttonChangeBuffer;
     
     
 	Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t numCols);
