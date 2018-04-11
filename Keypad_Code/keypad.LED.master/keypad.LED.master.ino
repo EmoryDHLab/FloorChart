@@ -30,8 +30,8 @@
 #define NODE_READ_DELAY 100 // Some delay between I2C node reads
 
 // The size of the copper grid
-#define ROWSIZE 30 // also refers to the number of strips
-#define COLSIZE 30 // also refers to the number of pixels in each strip
+#define ROWSIZE 30 // also refers to the number of pixels in each strip
+#define COLSIZE 30 // also refers to the number of strips
 
 #define NUMSTATES 7 // sets the number of states, used to loop through the number of states
 
@@ -47,7 +47,7 @@ uint32_t startTime;
 uint32_t pixelStates[ROWSIZE*COLSIZE];
 
 // holds the neopixel strips
-Adafruit_NeoPixel strips[ROWSIZE];
+Adafruit_NeoPixel strips[COLSIZE];
 
 
 /*
@@ -66,7 +66,7 @@ void setup() {
   while(!Serial); // Waits for Serial to begin
 
   // Initializing the strips
-  for(int i = 0; i < ROWSIZE; i++) {
+  for(int i = 0; i < COLSIZE; i++) {
     // Parameter 1 = number of pixels in strip
     // Parameter 2 = pin number (most are valid)
     // Parameter 3 = pixel type flags, add together as needed:
@@ -74,15 +74,15 @@ void setup() {
     //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
     //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-    Adafruit_NeoPixel strip = Adafruit_NeoPixel(COLSIZE, stripsToPins[i], NEO_GRB + NEO_KHZ800);
+    Adafruit_NeoPixel strip = Adafruit_NeoPixel(ROWSIZE, stripsToPins[i], NEO_GRB + NEO_KHZ800);
     strips[i] = strip;
     strips[i].begin();
     strips[i].setBrightness(60); // Brightness goes from 0 (off) to 255(max brightness).
     strips[i].show(); // Initializes all pixels to off
 
     // Initialize the pixel states to state 0
-    for (int j = 0; j < COLSIZE; j++) {
-      pixelStates[i*COLSIZE + j] = 0;
+    for (int j = 0; j < ROWSIZE; j++) {
+      pixelStates[i*ROWSIZE + j] = 0;
     }
   }
 
@@ -125,28 +125,30 @@ void loop()
 
 // Returns the state of a pixel given the row and the column of the pixel
 uint8_t getPixelState(uint8_t row, uint8_t col) {
-  return pixelStates[(uint32_t)row * COLSIZE + (uint32_t)col] & 0xF;
+  uint32_t index = ((uint32_t)col * ROWSIZE + (uint32_t)row);
+  return pixelStates[index] & 0xF;
 }
 
 // Sets the state fo a pixel given the row, column, and new state
 void setPixelState(uint8_t row, uint8_t col, uint8_t state) {
-  uint32_t index = ((uint32_t)row * COLSIZE + (uint32_t)col);
+  uint32_t index = ((uint32_t)col * ROWSIZE + (uint32_t)row);
   pixelStates[index] = (pixelStates[index] & 0xFFF0) & state;
 }
 
 // Returns the time of a pixel given the row and the column of the pixel
 uint32_t getPixelTime(uint8_t row, uint8_t col) {
-  return (uint32_t)pixelStates[(uint32_t)row * COLSIZE + (uint32_t)col]>>8 & 0xFFF;
+  uint32_t index = ((uint32_t)col * ROWSIZE + (uint32_t)row);
+  return (uint32_t)pixelStates[index]>>8 & 0xFFF;
 }
 
 // Sets the time fo a pixel given the row, column, and new time
 void setPixelTime(uint8_t row, uint8_t col, uint32_t t) {
-  uint32_t index = ((uint32_t)row * COLSIZE + (uint32_t)col);
+  uint32_t index = ((uint32_t)col * ROWSIZE + (uint32_t)row);
   pixelStates[index] = (pixelStates[index] & 0x000F) & (t<<8);
 }
 
 // Sets the color of a pixel 
-void setPixelColor(uint8_t row, uint8_t col, uint8_t red, uint8_t green, uint8_t blue) {
+void updatePixelColor(uint8_t row, uint8_t col, uint8_t red, uint8_t green, uint8_t blue) {
   strips[row].setPixelColor(col, red, green, blue); //sets the pixel color
   strips[row].show(); //updates the color
 }
@@ -161,19 +163,19 @@ void updatePixel(uint8_t addr, uint8_t row, uint8_t col, uint8_t type) {
       // updates the color of the pixel based on the state
       uint8_t state = getPixelState(row, col);
       if (state == 0) {
-        setPixelColor(row, col, 100, 100, 100);
+        updatePixelColor(row, col, 175, 175, 175);
       } else if (state == 1) {
-        setPixelColor(row, col, 100, 0, 0);
+        updatePixelColor(row, col, 175, 0, 0);
       } else if (state == 2) {
-        setPixelColor(row, col, 0, 100, 0);
+        updatePixelColor(row, col, 0, 175, 0);
       } else if (state == 3) {
-        setPixelColor(row, col, 0, 0, 100);
+        updatePixelColor(row, col, 0, 0, 175);
       } else if (state == 4) {
-        setPixelColor(row, col, 100, 100, 0);
+        updatePixelColor(row, col, 175, 175, 0);
       } else if (state == 5) {
-        setPixelColor(row, col, 100, 0, 100);
+        updatePixelColor(row, col, 175, 0, 175);
       } else if (state == 6) {
-        setPixelColor(row, col, 0, 100, 100);
+        updatePixelColor(row, col, 0, 175, 175);
       }
       
       //updates the state
@@ -182,6 +184,8 @@ void updatePixel(uint8_t addr, uint8_t row, uint8_t col, uint8_t type) {
   } else if (type == 2) { // released
     // update the time state of the pixel
     setPixelTime(row, col, millis() - startTime);
+  } else {
+    Serial.println("Unknown type");
   }
 }
 
