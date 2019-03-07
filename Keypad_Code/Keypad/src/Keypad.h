@@ -48,6 +48,7 @@ typedef unsigned long ulong;
 
 // Made changes according to this post http://arduino.cc/forum/index.php?topic=58337.0
 // by Nick Gammon. Thanks for the input Nick. It actually saved 78 bytes for me. :)
+// Contains the size of the keypad
 typedef struct {
     uint8_t rows;
     uint8_t columns;

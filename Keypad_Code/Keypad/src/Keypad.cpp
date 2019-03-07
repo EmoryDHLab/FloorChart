@@ -31,7 +31,7 @@ Keypad::Keypad(unsigned char *row, unsigned char *col, uint8_t numRows, uint8_t 
 
 // Returns a button change from the front of the queue
 // Returns 0 if no button changed
-unsigned long int Keypad::getButtonChange() {
+uint32_t Keypad::getButtonChange() {
     if (!buttonChangeBuffer.isEmpty()) {
         return buttonChangeBuffer.pop();
     } else {
@@ -46,7 +46,7 @@ bool Keypad::getKeys() {
 	bool keyActivity = false;
 
 	// Limit how often the keypad is scanned. This makes the loop() run 10 times as fast.
-	if ( (millis()-startTime)>debounceTime ) {
+	if ( (millis()-startTime)>debounceTime) {
 		scanKeys();
 		keyActivity = updateList();
 		startTime = millis();
@@ -105,7 +105,7 @@ bool Keypad::updateList() {
                 keys[(unsigned short)((unsigned short)r * (unsigned short)sizeKpd.columns) + c] = button;
                 // Adding the changed keys to the buffer
                 // adds one to button because 0 is no key - see getButtonChange()
-                unsigned long int buttonChange = ((unsigned long int)r<<24) | ((unsigned long int)c<<16) | (button+1);
+                uint32_t buttonChange = ((uint32_t)r<<24) | ((uint32_t)c<<16) | (uint32_t)(button+1);
                 buttonChangeBuffer.push(buttonChange);
                 
             // if button is not pressed (is reading high) and was not pressed in the past

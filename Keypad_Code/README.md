@@ -3,8 +3,9 @@ Code for I2C communication between 3 Arduinos for membrane switch control of LED
 
 /keypad.LED.master.ino
 
-    - Ties together Bluefruit LED, Arduino Wire and Keypad libraries to use Keypad library to control LED display
-    - Requests key codes from slaves 1 and 2 used to turn on a corresponding LED
+    - Controls LED display
+    - Requests button events from slaves 1 and 2 used to turn on a corresponding LED
+    - Keeps track of the state of the grid to determine the new color of the LED
 
 /keypad.slave.1.ino
 
