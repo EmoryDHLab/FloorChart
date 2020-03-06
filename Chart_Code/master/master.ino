@@ -35,9 +35,13 @@
 
 #define NUMSTATES 7 // sets the number of states, used to loop through the number of states
 
-// Led strips pin assignments
-unsigned char stripsToPins[NUMSTRIPS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, // 1-15
-                      //30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44}; // 16-30
+// New Led strips pin assignments - Spring 2020
+unsigned char stripsToPins[NUMSTRIPS] = {27, 26, 29, 28, 30, 21, 23, 22, 25, 24, 17, 16, 19, 18, 20, // 1-15
+                      11, 12, 13, 14, 15, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5}; // 16-30
+
+// Old Led strip pin assignments
+//unsigned char stripsToPins[NUMSTRIPS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, // 1-15
+//                      30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44}; // 16-30
 
 uint32_t startTime;
 
@@ -113,7 +117,7 @@ void loop()
   }
   
   // goes through each of the slaves asking for button events
-  //for (unsigned char nodeAddress = START_NODE; nodeAddress <= NODE_MAX; nodeAddress++) { // we are starting from Node address 1
+ for (unsigned char nodeAddress = START_NODE; nodeAddress <= NODE_MAX; nodeAddress++) { // we are starting from Node address 1
   Wire.requestFrom(nodeAddress, PAYLOAD_SIZE);    // request data from node
   // read in the data
   unsigned char addr = Wire.read();
@@ -137,7 +141,7 @@ void loop()
   // waits a reasonable amount
   delay(NODE_READ_DELAY);
 }
-
+}
 // Returns the state of a pixel given the row and the column of the pixel
 uint8_t getPixelState(uint8_t row, uint8_t col) {
   uint32_t index = ((uint32_t)col * ROWSIZE + (uint32_t)row);
@@ -223,5 +227,3 @@ void updatePixel(uint8_t addr, uint8_t row, uint8_t col, uint8_t type) {
     Serial.println("Unknown type");
   }
 }
-
-
