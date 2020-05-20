@@ -25,7 +25,7 @@
  * WIRE: define 
  */
 #define PAYLOAD_SIZE 4 // how many bytes to expect from each I2C salve node
-#define NODE_MAX 1 // maximum number of slave nodes (I2C addresses) to probe
+#define NODE_MAX 2 // maximum number of slave nodes (I2C addresses) to probe
 #define START_NODE 1 // The starting I2C address of slave nodes
 #define NODE_READ_DELAY 100 // Some delay between I2C node reads
 
@@ -43,7 +43,7 @@ unsigned char stripsToPins[NUMSTRIPS] = {27, 26, 29, 28, 30, 21, 23, 22, 25, 24,
 //unsigned char stripsToPins[NUMSTRIPS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, // 1-15
 //                      30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44}; // 16-30
 
-uint32_t startTime;
+uint32_t startTime = 0;
 
 // holds the state of each pixel and the last time it was changed
 // the most significant 24 bits are the time (supports continuous software running for 194 days)
