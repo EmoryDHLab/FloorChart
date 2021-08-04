@@ -35,6 +35,9 @@
 
 #define NUMSTATES 7 // sets the number of states, used to loop through the number of states
 
+// lk added august 2021
+# define NUMSTRIPS 30 // number of strips to be used below 
+
 // New Led strips pin assignments - Spring 2020
 unsigned char stripsToPins[NUMSTRIPS] = {27, 26, 29, 28, 30, 21, 23, 22, 25, 24, 17, 16, 19, 18, 20, // 1-15
                       11, 12, 13, 14, 15, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5}; // 16-30
